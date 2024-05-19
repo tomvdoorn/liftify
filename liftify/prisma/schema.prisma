@@ -1,16 +1,9 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
     provider = "prisma-client-js"
 }
 
 datasource db {
     provider = "postgresql"
-    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-    // Further reading:
-    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
     url      = env("DATABASE_URL")
 }
 
@@ -33,12 +26,12 @@ model Account {
     type                     String
     provider                 String
     providerAccountId        String
-    refresh_token            String? // @db.Text
-    access_token             String? // @db.Text
+    refresh_token            String?
+    access_token             String?
     expires_at               Int?
     token_type               String?
     scope                    String?
-    id_token                 String? // @db.Text
+    id_token                 String?
     session_state            String?
     user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
     refresh_token_expires_in Int?
@@ -63,6 +56,13 @@ model User {
     accounts      Account[]
     sessions      Session[]
     posts         Post[]
+    templates     Template[]
+    workouts      Workout[]
+    trainers      Trainer[] @relation("TrainerToTrainees")
+    trainees      Trainer[] @relation("TraineeToTrainers")
+    assignedTemplatesAsTrainer AssignedTemplate[] @relation("AssignedTemplatesAsTrainer")
+    assignedTemplatesAsTrainee AssignedTemplate[] @relation("AssignedTemplatesAsTrainee")
+    schedules     Schedule[]
 }
 
 model VerificationToken {
@@ -71,4 +71,107 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model Exercise {
+    id               Int               @id @default(autoincrement())
+    name             String
+    description      String?
+    createdAt        DateTime          @default(now())
+    templateExercises TemplateExercise[]
+    workoutLogs      WorkoutLog[]
+}
+
+model Template {
+    id                Int                @id @default(autoincrement())
+    userId            String
+    name              String
+    createdAt         DateTime           @default(now())
+    user              User               @relation(fields: [userId], references: [id])
+    templateExercises TemplateExercise[]
+    workouts          Workout[]
+    assignedTemplates AssignedTemplate[] @relation("AssignedTemplateTemplate")
+    scheduledWorkouts ScheduledWorkout[]
+}
+
+model TemplateExercise {
+    id          Int      @id @default(autoincrement())
+    templateId  Int
+    exerciseId  Int
+    order       Int
+    createdAt   DateTime @default(now())
+    template    Template @relation(fields: [templateId], references: [id])
+    exercise    Exercise @relation(fields: [exerciseId], references: [id])
+
+    @@unique([templateId, exerciseId])
+}
+
+model Workout {
+    id          Int         @id @default(autoincrement())
+    userId      String
+    templateId  Int
+    date        DateTime    @default(now())
+    createdAt   DateTime    @default(now())
+    user        User        @relation(fields: [userId], references: [id])
+    template    Template    @relation(fields: [templateId], references: [id])
+    workoutLogs WorkoutLog[]
+}
+
+model WorkoutLog {
+    id          Int      @id @default(autoincrement())
+    workoutId   Int
+    exerciseId  Int
+    sets        Int
+    reps        Int
+    weight      Float
+    createdAt   DateTime @default(now())
+    workout     Workout  @relation(fields: [workoutId], references: [id])
+    exercise    Exercise @relation(fields: [exerciseId], references: [id])
+
+    @@unique([workoutId, exerciseId])
+}
+
+model Trainer {
+    trainerId   String
+    traineeId   String
+    createdAt   DateTime @default(now())
+    trainer     User     @relation("TrainerToTrainees", fields: [trainerId], references: [id])
+    trainee     User     @relation("TraineeToTrainers", fields: [traineeId], references: [id])
+
+    @@id([trainerId, traineeId])
+}
+
+model AssignedTemplate {
+    id          Int       @id @default(autoincrement())
+    trainerId   String
+    traineeId   String
+    templateId  Int
+    assignedAt  DateTime  @default(now())
+    trainer     User      @relation("AssignedTemplatesAsTrainer", fields: [trainerId], references: [id])
+    trainee     User      @relation("AssignedTemplatesAsTrainee", fields: [traineeId], references: [id])
+    template    Template  @relation("AssignedTemplateTemplate", fields: [templateId], references: [id])
+
+    @@unique([trainerId, traineeId, templateId])
+}
+
+model Schedule {
+    id        Int       @id @default(autoincrement())
+    userId    String
+    date      DateTime
+    createdAt DateTime  @default(now())
+    user      User      @relation(fields: [userId], references: [id])
+    scheduledWorkouts ScheduledWorkout[]
+
+    @@unique([userId, date])
+}
+
+model ScheduledWorkout {
+    id         Int       @id @default(autoincrement())
+    scheduleId Int
+    templateId Int
+    createdAt  DateTime  @default(now())
+    schedule   Schedule  @relation(fields: [scheduleId], references: [id])
+    template   Template  @relation(fields: [templateId], references: [id])
+
+    @@unique([scheduleId, templateId])
 }
