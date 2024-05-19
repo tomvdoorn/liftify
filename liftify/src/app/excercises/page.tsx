@@ -1,35 +1,35 @@
 'use client';
-
 import { useState } from 'react';
-import { Button, Input, Modal } from '@shadcn/ui';
-import { trpc } from '../../lib/trpc';
+import { Button} from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Dialog } from '../../components/ui/dialog';
+// import { api } from "~/trpc/server";
 
 export default function Exercises() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const { data: exercises, refetch } = trpc.exercise.getAll.useQuery();
-  const createExercise = trpc.exercise.create.useMutation({
-    onSuccess: () => refetch(),
-  });
-
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+//   const { data: exercises, refetch } = api.exercise.getAll.useQuery();
+//   const createExercise = api.exercise.create.useMutation({
+//     onSuccess: () => refetch(),
+//   });
   const [exerciseName, setExerciseName] = useState('');
   const [description, setDescription] = useState('');
 
-  const handleAddExercise = () => {
-    createExercise.mutate({
-      name: exerciseName,
-      description,
-    });
-    setIsModalOpen(false);
-    setExerciseName('');
-    setDescription('');
-  };
+//   const handleAddExercise = () => {
+//     createExercise.mutate({
+//       name: exerciseName,
+//       description,
+//     });
+//     setIsDialogOpen(false);
+//     setExerciseName('');
+//     setDescription('');
+//   };
 
   return (
     <div>
       <h1 className="text-2xl font-bold">Exercises</h1>
       <p className="mt-4">Manage your exercises here.</p>
-      <Button onClick={() => setIsModalOpen(true)}>Add Exercise</Button>
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <Button onClick={() => setIsDialogOpen(true)}>Add Exercise</Button>
+    <Dialog open={isDialogOpen} onOpenChange={() => setIsDialogOpen(false)}>
         <div className="p-4">
           <h2 className="text-xl font-bold">Add Exercise</h2>
           <Input
@@ -44,18 +44,22 @@ export default function Exercises() {
             onChange={(e) => setDescription(e.target.value)}
             className="mt-2"
           />
-          <Button className="mt-4" onClick={handleAddExercise}>
+           <Button className="mt-4">
             Save
           </Button>
+          {/* <Button className="mt-4" onClick={handleAddExercise}>
+            Save
+          </Button> */}
         </div>
-      </Modal>
-      <ul className="mt-4">
+      </Dialog>
+
+    {/* <ul className="mt-4">
         {exercises?.map((exercise) => (
-          <li key={exercise.id} className="border-b py-2">
-            {exercise.name}
-          </li>
+            <li key={exercise.id} className="border-b py-2">
+                {exercise.name}
+            </li>
         ))}
-      </ul>
+    </ul> */}
     </div>
   );
 }
